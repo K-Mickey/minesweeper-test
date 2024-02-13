@@ -49,6 +49,10 @@ class Game(models.Model):
         verbose_name='Поле для игры',
         default=list,
     )
+    field_mines = models.JSONField(
+        verbose_name='Поле с минами',
+        null=True,
+    )
 
     class Meta:
         verbose_name = 'Игра'
