@@ -1,24 +1,18 @@
+import uuid
+
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
+from rest_framework.exceptions import ValidationError
 
-from .settings import MIN_WIDTH_GRID, MAX_WIDTH_GRID, MIN_HEIGHT_GRID, MAX_HEIGHT_GRID, MIN_N_MINES
-
-
-def validate_mines_count(value):
-    """
-    Валидация количества мин.
-    Количество мин должно быть хотя бы на одну меньше, чем
-    количество клеток
-    """
-    return value.mines_count < value.width * value.height
+from .settings import MIN_WIDTH_GRID, MAX_WIDTH_GRID, MIN_HEIGHT_GRID, \
+    MAX_HEIGHT_GRID, MIN_N_MINES
 
 
 class Game(models.Model):
-    game_id = models.CharField(
-        verbose_name='id',
-        max_length=50,
-        unique=True,
+    game_id = models.UUIDField(
+        verbose_name='Идентификатор игры',
         primary_key=True,
+        default=uuid.uuid4,
     )
     width = models.PositiveIntegerField(
         verbose_name='Ширина',
@@ -38,8 +32,7 @@ class Game(models.Model):
         verbose_name='Количество мин',
         validators=[
             MinValueValidator(MIN_N_MINES),
-            validate_mines_count,
-        ]
+        ],
     )
     completed = models.BooleanField(
         verbose_name='Завершена ли игра',
@@ -61,6 +54,14 @@ class Game(models.Model):
     def __str__(self):
         return f'Игра {self.game_id} - ' \
                f'{"завершена" if self.completed else "не завершена"}'
+
+    def clean_fields(self, exclude=None):
+        super().clean_fields(exclude=exclude)
+
+        if self.mines_count >= self.width * self.height:
+            raise ValidationError(
+                'Количество мин должно быть меньше, чем количество ячеек поля'
+            )
 
 
 class Mine(models.Model):
