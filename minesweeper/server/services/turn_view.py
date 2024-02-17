@@ -4,6 +4,9 @@ from django.shortcuts import get_object_or_404
 
 from server.models import Game, Mine
 from server.services.create_fields import _get_coordinates
+from server.exceptions import GameCompletedException
+
+from minesweeper.server.exceptions import AlreadyOpenedException
 
 
 class Coord(NamedTuple):
@@ -20,8 +23,17 @@ def get_game_model(validated_data: dict) -> Game:
     return game
 
 
+def is_valid_turn(game: Game, validated_data: dict) -> bool:
+    if game.completed:
+        raise GameCompletedException()
+
+    coord = _get_coord(validated_data)
+    if isinstance(game.field[coord.x_width][coord.y_height], int):
+        raise AlreadyOpenedException()
+
+
 def update_game(game: Game, validated_data: dict) -> Game:
-    new_coord = Coord(validated_data.get('col'), validated_data.get('row'))
+    new_coord = _get_coord(validated_data)
 
     coordinates = _get_coordinates(game)
     if new_coord in coordinates:
@@ -32,9 +44,13 @@ def update_game(game: Game, validated_data: dict) -> Game:
     return game
 
 
+def _get_coord(validated_data: dict) -> Coord:
+    return Coord(validated_data.get('col'), validated_data.get('row'))
+
+
 def _game_over(game: Game, coordinates: Set[Coord]) -> Game:
     game.completed = True
-    game.field = _open_field(game, coordinates)
+    game.field = _open_all_field(game, coordinates)
     return game
 
 
@@ -47,7 +63,7 @@ def _next_game_turn(game: Game, new_coord: Coord) -> Game:
 
     while stack_coordinates:
         coord = stack_coordinates.pop()
-        if coord in visited_coordinates or not _is_valid_coord(coord, game):
+        if _is_not_valid_coord(game, coord) or _is_opened_cell(field, coord):
             continue
 
         visited_coordinates.add(coord)
@@ -59,7 +75,7 @@ def _next_game_turn(game: Game, new_coord: Coord) -> Game:
     return game
 
 
-def _open_field(game: Game, coordinates: Set[Coord], is_win: bool = True) \
+def _open_all_field(game: Game, coordinates: Set[Coord], is_win: bool = True) \
         -> List[List[str | int]]:
     if is_win:
         return game.field_mines
@@ -70,9 +86,14 @@ def _open_field(game: Game, coordinates: Set[Coord], is_win: bool = True) \
     return field_mines
 
 
-def _is_valid_coord(coord: Coord, game: Game) -> bool:
-    return 0 <= coord.x_width < game.width and \
-    0 <= coord.y_height < game.height
+def _is_not_valid_coord(game: Game, coord: Coord) -> bool:
+    return not (0 <= coord.x_width < game.width and
+                0 <= coord.y_height < game.height)
+
+
+def _is_opened_cell(field: List[List[str | int]], coord: Coord) -> bool:
+    """Символ пробела может быть только в закрытой ячейке"""
+    return field[coord.x_width][coord.y_height] != ' '
 
 
 def _add_cell_to_field(
@@ -85,7 +106,8 @@ def _add_cell_to_field(
     return cell_field
 
 
-def _add_neighbor_coordinates(stack_coordinates: List[Coord], coord: Coord):
+def _add_neighbor_coordinates(stack_coordinates: List[Coord], coord: Coord) \
+        -> None:
     for x in range(coord.x_width - 0, coord.x_width + 2):
         for y in range(coord.y_height - 0, coord.y_height + 2):
             stack_coordinates.append(Coord(x, y))

@@ -10,7 +10,10 @@ class Coord(NamedTuple):
     y_height: int
 
 
-def create_field(validated_data: dict, default_cell: str | int = ' ') -> List[List]:
+def create_field(
+        validated_data: dict,
+        default_cell: str | int = ' '
+) -> List[List]:
     width = validated_data.get('width')
     height = validated_data.get('height')
     return [[default_cell] * height for _ in range(width)]
@@ -38,7 +41,11 @@ def create_field_mines(game: Game, validated_data: dict) -> None:
     game.save()
 
 
-def _add_around_cnt(coord: Coord, coordinates: Set[Coord], field: List[List[int]]) -> int:
+def _add_around_cnt(
+        coord: Coord,
+        coordinates: Set[Coord],
+        field: List[List[int]]
+) -> int:
     x_min = max(0, coord.x_width - 1)
     x_max = min(coord.x_width + 2, len(field))
     y_min = max(0, coord.y_height - 1)
