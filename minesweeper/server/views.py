@@ -9,7 +9,7 @@ from .services.turn_view import get_game_model, update_game, is_valid_turn
 def new(request):
     serializer = GameSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    serializer.create(serializer.validated_data)
+    serializer.save()
     return Response(serializer.data)
 
 
@@ -20,6 +20,6 @@ def turn(request):
 
     game = get_game_model(serializer.validated_data)
     is_valid_turn(game, serializer.validated_data)
-    game = update_game(game, serializer.validated_data)
+    update_game(game, serializer.validated_data)
 
     return Response(GameSerializer(game).data)

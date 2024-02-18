@@ -3,8 +3,8 @@ from itertools import chain
 
 from django.test import TestCase
 
-from minesweeper.server.models import Game
-from minesweeper.server.serializers import GameSerializer
+from .models import Game
+from .serializers import GameSerializer
 
 
 class GameCreationPositiveTests(TestCase):

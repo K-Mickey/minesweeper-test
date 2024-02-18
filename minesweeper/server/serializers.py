@@ -9,7 +9,14 @@ from .services.create_fields import create_field, create_mines, create_field_min
 class GameSerializer(serializers.ModelSerializer):
     class Meta:
         model = Game
-        fields = ['width', 'height', 'mines_count']
+        fields = [
+            'game_id',
+            'width',
+            'height',
+            'mines_count',
+            'completed',
+            'field',
+        ]
 
     def create(self, validated_data: dict) -> Game:
         with transaction.atomic():

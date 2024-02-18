@@ -5,8 +5,7 @@ from django.shortcuts import get_object_or_404
 from server.models import Game, Mine
 from server.services.create_fields import _get_coordinates
 from server.exceptions import GameCompletedException
-
-from minesweeper.server.exceptions import AlreadyOpenedException
+from server.exceptions import AlreadyOpenedException
 
 
 class Coord(NamedTuple):
